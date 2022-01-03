@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using MobileyeExam.Entities;
 
 namespace MobileyeExam.Services
 {

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MobileyeExam.Entities;
@@ -14,13 +13,13 @@ namespace MobileyeExam.Repositories
 		//Simulate a DB with an index on the Word string 
 		//each row would have an ID (uniq), a word(Non Uniq but indexed) & a count 
 		//Done using a simple list (For faster response on getCount ) that allows duplicated keys
-		private readonly List<WordEntity> _wordCount = new ();
+		private readonly List<WordEntity> wordCount = new ();
 
 		public async Task<WordEntity> AddAsync(WordEntity word)
 		{
 			await Task.Run(() =>
 			{
-				_wordCount.Add(word);
+				wordCount.Add(word);
 			});
 			return word;
 		}
@@ -30,7 +29,7 @@ namespace MobileyeExam.Repositories
 			long totalWordCount = 0;
 			await Task.Run(() =>
 			{
-				var words = _wordCount
+				var words = wordCount
 					.Where(w => w.Name == word)
 					.ToList();
 

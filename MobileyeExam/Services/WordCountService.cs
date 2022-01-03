@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using MobileyeExam.Controllers;
 using MobileyeExam.Entities;
 using MobileyeExam.Repositories;
 
@@ -16,12 +12,11 @@ namespace MobileyeExam.Services
 	public class WordCountService : IWordCountService
 	{
 		private readonly IWordCountRepository wordCountRepository;
-		private readonly IWordCountTaskQueue wordCountTaskQueue;
 		private const int MaxWordCountBuffer = 100;
 
 		//This controls how many bytes to read at a time and send to the client
-		const int bytesToRead = 10000000;
-		private byte[] buffer = new Byte[bytesToRead];
+		const int BytesToRead = 10000000;
+		private byte[] buffer = new Byte[BytesToRead];
 
 		public WordCountService(IWordCountRepository wordCountRepository)
 		{
@@ -37,7 +32,7 @@ namespace MobileyeExam.Services
 
 		public async Task<long> CountWordsFromFileAsync(string file)
 		{
-			long totalWords = 0;
+			long totalWords;
 			// Create a stream for the file
 
 			Stream stream = null;
@@ -69,7 +64,7 @@ namespace MobileyeExam.Services
 			{
 				// Verify that the client is connected.
 				// Read data into the buffer.
-				length = stream.Read(buffer, 0, bytesToRead);
+				length = stream.Read(buffer, 0, BytesToRead);
 
 				var streemReader = new StreamReader(new MemoryStream(buffer), Encoding.Default);
 
@@ -77,7 +72,7 @@ namespace MobileyeExam.Services
 				// and write it out to the response's output stream
 
 				//Clear the buffer
-				buffer = new Byte[bytesToRead];
+				buffer = new Byte[BytesToRead];
 			} while (length > 0); //Repeat until no data is read
 
 			return totalWords;
@@ -94,10 +89,10 @@ namespace MobileyeExam.Services
 			try
 			{
 				//Create a WebRequest to get the file
-				HttpWebRequest fileReq = (HttpWebRequest)HttpWebRequest.Create(url);
+				var fileReq = WebRequest.Create(url);
 
 				//Create a response for this request
-				HttpWebResponse fileResp = (HttpWebResponse)fileReq.GetResponse();
+				var fileResp = await fileReq.GetResponseAsync();
 
 				if (fileReq.ContentLength > 0)
 					fileResp.ContentLength = fileReq.ContentLength;
@@ -105,23 +100,24 @@ namespace MobileyeExam.Services
 				//Get the Stream returned from the response
 				stream = fileResp.GetResponseStream();
 
-
-				var s = fileResp.ContentLength.ToString();
-
 				int length;
 				do
 				{
 					// Verify that the client is connected.
 						// Read data into the buffer.
-						length = stream.Read(buffer, 0, bytesToRead);
+						if (stream == null)
+						{
+							throw new Exception($"Unable to fetch file{url}");
+						}
+						length = await stream.ReadAsync(buffer, 0, BytesToRead);
 
-						var streemReader = new StreamReader(new MemoryStream(buffer), Encoding.Default);
+						var streamReader = new StreamReader(new MemoryStream(buffer), Encoding.Default);
 
-						totalWords += await this.CountWords(streemReader);
+						totalWords += await this.CountWords(streamReader);
 						// and write it out to the response's output stream
 
 						//Clear the buffer
-						buffer = new Byte[bytesToRead];
+						buffer = new Byte[BytesToRead];
 				} while (length > 0); //Repeat until no data is read
 			}
 			finally
@@ -147,7 +143,7 @@ namespace MobileyeExam.Services
 				if (line == null)
 				{
 					//continue;
-					return totalWords;
+					break;
 				}
 
 				var lineWords = line.Split('@', ' ', '(', ')', '?', '!', ',', '.', ';', '\'');

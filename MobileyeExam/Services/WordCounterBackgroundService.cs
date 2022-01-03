@@ -1,18 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MobileyeExam.Controllers;
-using MobileyeExam.Entities;
 
 namespace MobileyeExam.Services
 {
 	public class WordCounterBackgroundService : BackgroundService
 	{
-		private ILogger<WordCounterBackgroundService> logger;
+		private readonly ILogger<WordCounterBackgroundService> logger;
 		private readonly IWordCountService wordCountService;
 		private readonly IWordCountTaskQueue wordCountTaskQueue;
 
@@ -33,20 +30,24 @@ namespace MobileyeExam.Services
 				await Task.Delay(5000);
 				try
 				{
-					CountWordsTaskEntity task;
-					if (!wordCountTaskQueue.TryDequeue(out task))
+					if (!wordCountTaskQueue.TryDequeue(out var task))
 					{
 						continue;
 					}
 
-					if (task.SourceType == StringSourceTypeEnum.Url)
+					long parsedWords;
+					switch (task.SourceType)
 					{
-						long parsedWords = await wordCountService.CountWordsFromUrlAsync(task.Source);
-					}else if (task.SourceType == StringSourceTypeEnum.FilePath)
-					{
-						long parsedWords = await wordCountService.CountWordsFromFileAsync(task.Source);
+						case StringSourceTypeEnum.Url:
+							parsedWords = await wordCountService.CountWordsFromUrlAsync(task.Source);
+							break;
+						case StringSourceTypeEnum.FilePath:
+							parsedWords = await wordCountService.CountWordsFromFileAsync(task.Source);
+							break;
+						default:
+							throw new Exception($"Unable to handle source type: {task.SourceType}");
 					}
-					logger.LogInformation($"Finished parsing {task.Source}");
+					logger.LogInformation($"Finished parsing {task.Source} parsed word count:{parsedWords}");
 
 				}
 				catch (Exception e)

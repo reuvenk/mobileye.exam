@@ -25,11 +25,11 @@ namespace MobileyeExam.Controllers
 			//[FromBody] string str, 
 			StringSourceTypeEnum sourceType)
 		{
-			string result = "";
+			string result;
 			switch (sourceType)
 			{
 				case StringSourceTypeEnum.Body:
-					long totalWords = 0;
+					long totalWords;
 					using (StreamReader reader = new StreamReader(Request.Body, Encoding.UTF8))
 					{
 						totalWords = await wordCountService.CountWords(reader);

@@ -5,7 +5,7 @@ namespace MobileyeExam.Services
 {
 	public class WordCountQueue :  IWordCountTaskQueue
 	{
-		private ConcurrentQueue<CountWordsTaskEntity> countWordsFromUrlQueue = new ConcurrentQueue<CountWordsTaskEntity>();
+		private readonly ConcurrentQueue<CountWordsTaskEntity> countWordsFromUrlQueue = new ConcurrentQueue<CountWordsTaskEntity>();
 		public int Enqueue(CountWordsTaskEntity countWordsTask)
 		{
 			countWordsFromUrlQueue.Enqueue(countWordsTask);
