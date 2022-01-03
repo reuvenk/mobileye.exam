@@ -21,7 +21,7 @@ namespace MobileyeExam.Controllers
 		}
 
 		[HttpPost("Count/{sourceType}")]
-		public async Task<string> CountWords( 
+		public async Task<IActionResult> CountWords( 
 			//[FromBody] string str, 
 			StringSourceTypeEnum sourceType)
 		{
@@ -39,6 +39,10 @@ namespace MobileyeExam.Controllers
 				case StringSourceTypeEnum.Url:
 				case StringSourceTypeEnum.FilePath:
 					var str = await GetStringFromBody();
+					if (String.IsNullOrEmpty(str))
+					{
+						return StatusCode(400);
+					}
 					var taskEntity = new CountWordsTaskEntity(sourceType, str);
 					var placeInQ = wordCountQueue.Enqueue(new CountWordsTaskEntity(sourceType, str));
 					result = $"place in Queue: {placeInQ}, request ID: {taskEntity.Id}";
@@ -47,7 +51,7 @@ namespace MobileyeExam.Controllers
 					throw new Exception($"unsupported source Type: {sourceType}");
 			}
 
-			return result;
+			return Ok(result);
 		}
 
 		private async Task<string> GetStringFromBody()
@@ -59,9 +63,9 @@ namespace MobileyeExam.Controllers
 		}
 
 		[HttpGet("statistics/{word}")]
-		public async Task<long> WordStatistics([FromRoute] string word)
+		public async Task<IActionResult> WordStatistics([FromRoute] string word)
 		{
-			return await wordCountService.GetWordStatisticsAsync(word);
+			return Ok(await wordCountService.GetWordStatisticsAsync(word));
 		}
 	}
 }
